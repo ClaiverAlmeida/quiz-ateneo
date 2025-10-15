@@ -34,3 +34,4 @@ export function getSubmitQuizEndpoint(): string {
   const normalizedBase = ensureApiSuffix(normalizeBase(baseUrl));
   return `${normalizedBase}/submit-quiz`;
 }
+  

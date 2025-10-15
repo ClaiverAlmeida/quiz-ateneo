@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-// Configuração CORS
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
-export async function OPTIONS(request: NextRequest) {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
 export async function POST(request: NextRequest) {
   try {
     let body: any;
@@ -24,7 +13,7 @@ export async function POST(request: NextRequest) {
           error:
             "Não foi possível processar os dados enviados. Verifique sua conexão e tente novamente.",
         },
-        { status: 400, headers: corsHeaders }
+        { status: 400,  }
       );
     }
     console.log("Requisição recebida em /api/submit-quiz:", body);
@@ -44,7 +33,7 @@ export async function POST(request: NextRequest) {
           error:
             "Todos os campos são obrigatórios e o quiz deve ser concluído.",
         },
-        { status: 400, headers: corsHeaders }
+        { status: 400,  }
       );
     }
 
@@ -69,6 +58,7 @@ export async function POST(request: NextRequest) {
       "Como você vê a exclusividade em móveis?",
       "Como você prefere escolher móveis e decoração?",
       "Qual seu prazo ideal para receber os móveis?",
+      "Pergunta adicional (dados extras)", // Para cobrir caso de 8 respostas
     ];
 
     const optionsText = [
@@ -103,18 +93,38 @@ export async function POST(request: NextRequest) {
         "Prefiro pronta-entrega de linha selecionada",
         "Preciso de entrega imediata e prática",
       ],
+      [
+        "Dados extras - opção 1",
+        "Dados extras - opção 2", 
+        "Dados extras - opção 3",
+      ],
     ];
 
     // Construir respostas formatadas
     let answersFormatted = "";
     quizAnswers.forEach((score: number, index: number) => {
+      // Verificar se o índice existe nos arrays
+      if (index >= questionsText.length || index >= optionsText.length) {
+        console.warn(`Índice ${index} fora do range dos arrays. questionsText: ${questionsText.length}, optionsText: ${optionsText.length}`);
+        answersFormatted += `${index + 1}. Pergunta não encontrada\n   Resposta: Score ${score}\n\n`;
+        return;
+      }
+
       const questionText = questionsText[index];
+      const currentOptions = optionsText[index];
       let selectedOption = "";
+
+      // Verificar se currentOptions existe e é um array
+      if (!currentOptions || !Array.isArray(currentOptions)) {
+        console.warn(`Opções não encontradas para índice ${index}`);
+        answersFormatted += `${index + 1}. ${questionText}\n   Resposta: Score ${score} (opções não disponíveis)\n\n`;
+        return;
+      }
 
       // Encontrar a opção baseada no score
       if (score === 3) {
         selectedOption =
-          optionsText[index].find(
+          currentOptions.find(
             (opt) =>
               opt.includes("qualidade") ||
               opt.includes("Acima") ||
@@ -123,20 +133,20 @@ export async function POST(request: NextRequest) {
               opt.includes("única") ||
               opt.includes("consultoria") ||
               opt.includes("sob medida")
-          ) || optionsText[index][0];
+          ) || currentOptions[0];
       } else if (score === 2) {
         selectedOption =
-          optionsText[index].find(
+          currentOptions.find(
             (opt) =>
               opt.includes("Entre") ||
               opt.includes("Algumas") ||
               opt.includes("equilíbrio") ||
               opt.includes("Pesquiso") ||
               opt.includes("pronta-entrega")
-          ) || optionsText[index][1];
+          ) || currentOptions[1];
       } else {
         selectedOption =
-          optionsText[index].find(
+          currentOptions.find(
             (opt) =>
               opt.includes("acessível") ||
               opt.includes("Até") ||
@@ -144,7 +154,7 @@ export async function POST(request: NextRequest) {
               opt.includes("Raramente") ||
               opt.includes("sozinho") ||
               opt.includes("imediata")
-          ) || optionsText[index][2];
+          ) || currentOptions[2];
       }
 
       answersFormatted += `${
@@ -309,7 +319,7 @@ export async function POST(request: NextRequest) {
           errors: errors.length > 0 ? errors : undefined,
         },
       },
-      { headers: corsHeaders }
+      {  }
     );
   } catch (error) {
     console.error("Erro ao processar formulário:", error);
@@ -317,7 +327,7 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : "Erro interno do servidor";
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500, headers: corsHeaders }
+      { status: 500,  }
     );
   }
 }

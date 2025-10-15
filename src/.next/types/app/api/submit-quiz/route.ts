@@ -1,4 +1,4 @@
-// File: /Users/everton/Downloads/Quiz-Ateneo/src/app/api/submit-quiz/route.ts
+// File: /home/claiver/projetos/quiz-ateneo/src/app/api/submit-quiz/route.ts
 import * as entry from '../../../../../app/api/submit-quiz/route.js'
 import type { NextRequest } from 'next/server.js'
 

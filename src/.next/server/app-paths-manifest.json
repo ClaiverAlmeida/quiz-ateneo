@@ -1,6 +1,3 @@
 {
-  "/_not-found": "app/_not-found.js",
-  "/page": "app/page.js",
-  "/api/submit-quiz/route": "app/api/submit-quiz/route.js",
-  "/api/test-sheets/route": "app/api/test-sheets/route.js"
+  "/api/submit-quiz/route": "app/api/submit-quiz/route.js"
 }
