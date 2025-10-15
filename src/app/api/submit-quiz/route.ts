@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
+// Configuração CORS
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body: any;
@@ -13,7 +24,7 @@ export async function POST(request: NextRequest) {
           error:
             "Não foi possível processar os dados enviados. Verifique sua conexão e tente novamente.",
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders }
       );
     }
     console.log("Requisição recebida em /api/submit-quiz:", body);
@@ -29,8 +40,11 @@ export async function POST(request: NextRequest) {
       quizAnswers.length === 0
     ) {
       return NextResponse.json(
-        { error: "Todos os campos são obrigatórios e o quiz deve ser concluído." },
-        { status: 400 },
+        {
+          error:
+            "Todos os campos são obrigatórios e o quiz deve ser concluído.",
+        },
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -63,11 +77,7 @@ export async function POST(request: NextRequest) {
         "Design exclusivo e sofisticado",
         "Preço acessível e funcionalidade",
       ],
-      [
-        "Até R$ 15.000",
-        "Entre R$ 15.000 e R$ 40.000",
-        "Acima de R$ 40.000",
-      ],
+      ["Até R$ 15.000", "Entre R$ 15.000 e R$ 40.000", "Acima de R$ 40.000"],
       [
         "Madeira nobre e materiais naturais",
         "Couro legítimo e tecidos premium",
@@ -112,7 +122,7 @@ export async function POST(request: NextRequest) {
               opt.includes("Frequentemente") ||
               opt.includes("única") ||
               opt.includes("consultoria") ||
-              opt.includes("sob medida"),
+              opt.includes("sob medida")
           ) || optionsText[index][0];
       } else if (score === 2) {
         selectedOption =
@@ -122,7 +132,7 @@ export async function POST(request: NextRequest) {
               opt.includes("Algumas") ||
               opt.includes("equilíbrio") ||
               opt.includes("Pesquiso") ||
-              opt.includes("pronta-entrega"),
+              opt.includes("pronta-entrega")
           ) || optionsText[index][1];
       } else {
         selectedOption =
@@ -133,17 +143,19 @@ export async function POST(request: NextRequest) {
               opt.includes("simples") ||
               opt.includes("Raramente") ||
               opt.includes("sozinho") ||
-              opt.includes("imediata"),
+              opt.includes("imediata")
           ) || optionsText[index][2];
       }
 
-      answersFormatted += `${index + 1}. ${questionText}\n   Resposta: ${selectedOption} (Score: ${score})\n\n`;
+      answersFormatted += `${
+        index + 1
+      }. ${questionText}\n   Resposta: ${selectedOption} (Score: ${score})\n\n`;
     });
 
     // Calcular perfil por extenso
     const totalScore = quizAnswers.reduce(
       (sum: number, score: number) => sum + score,
-      0,
+      0
     );
     const averageScore = totalScore / quizAnswers.length;
     let profileText = "";
@@ -185,8 +197,8 @@ export async function POST(request: NextRequest) {
                 profile === "alto"
                   ? "Cliente com alto potencial! Priorize consultoria premium e peças exclusivas."
                   : profile === "medio"
-                    ? "Cliente equilibrado. Foque em qualidade com bom custo-benefício."
-                    : "Cliente potencial. Apresente opções acessíveis e inspire gradualmente."
+                  ? "Cliente equilibrado. Foque em qualidade com bom custo-benefício."
+                  : "Cliente potencial. Apresente opções acessíveis e inspire gradualmente."
               }
             </p>
           </div>
@@ -194,7 +206,9 @@ export async function POST(request: NextRequest) {
         
         <div style="background: #2c2c2c; color: white; padding: 20px; text-align: center;">
           <p style="margin: 0;">Ateneo Interiores - Sistema de Quiz</p>
-          <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Processado em ${new Date().toLocaleString("pt-BR")}</p>
+          <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Processado em ${new Date().toLocaleString(
+            "pt-BR"
+          )}</p>
         </div>
       </div>
     `;
@@ -205,8 +219,19 @@ export async function POST(request: NextRequest) {
       email,
       phone,
       profile: profileText,
-      averageScore: averageScore.toFixed(2),
-      answers: quizAnswers,
+      quizAnswers: quizAnswers,
+      quizSnapshot: {
+        averageScore: averageScore.toFixed(2),
+        profileText: profileText,
+        totalScore: totalScore,
+      },
+      client: {
+        userAgent: request.headers.get("user-agent") || "Unknown",
+        ip:
+          request.headers.get("x-forwarded-for") ||
+          request.headers.get("x-real-ip") ||
+          "Unknown",
+      },
       timestamp: new Date().toISOString(),
     };
 
@@ -231,9 +256,9 @@ export async function POST(request: NextRequest) {
     if (process.env.GOOGLE_APPS_SCRIPT_URL) {
       promises.push(
         fetch(process.env.GOOGLE_APPS_SCRIPT_URL, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(sheetsData),
         })
@@ -242,18 +267,22 @@ export async function POST(request: NextRequest) {
 
     // Executar envios em paralelo
     const results = await Promise.allSettled(promises);
-    
+
     // Verificar resultados
     let emailSent = false;
     let sheetsSent = false;
     let errors = [];
 
     results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         if (index === 0) emailSent = true;
         if (index === 1) sheetsSent = true;
       } else {
-        errors.push(`Erro no envio ${index === 0 ? 'email' : 'Google Sheets'}: ${result.reason}`);
+        errors.push(
+          `Erro no envio ${index === 0 ? "email" : "Google Sheets"}: ${
+            result.reason
+          }`
+        );
       }
     });
 
@@ -270,19 +299,25 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Dados enviados com sucesso!",
-      details: {
-        emailSent,
-        sheetsSent,
-        errors: errors.length > 0 ? errors : undefined,
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Dados enviados com sucesso!",
+        details: {
+          emailSent,
+          sheetsSent,
+          errors: errors.length > 0 ? errors : undefined,
+        },
       },
-    });
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Erro ao processar formulário:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Erro interno do servidor";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
