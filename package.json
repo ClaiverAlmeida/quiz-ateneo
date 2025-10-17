@@ -58,12 +58,8 @@
     "vite": "6.3.5"
   },
   "scripts": {
-    "dev": "bash ./start-dev.sh",
-    "dev:frontend": "vite",
-    "dev:api": "cd src && npm run dev",
-    "build": "npm run build:frontend && npm run build:api",
-    "build:frontend": "vite build",
-    "build:api": "cd src && npm run build",
-    "start": "bash ./start-prod.sh"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }
