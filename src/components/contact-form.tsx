@@ -64,7 +64,7 @@ export function ContactForm({ profile, quizAnswers, onSubmit, onBack }: ContactF
 
       if (result.success) {
         setIsSubmitting(false);
-        // onSubmit();
+        onSubmit();
       } else {
         throw new Error(result.message);
       }
