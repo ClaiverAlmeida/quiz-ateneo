@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getSubmitQuizEndpoint } from '../utils/api-endpoints';
+import React, { useState } from 'react';
+import { QuizService, QuizSubmission } from '../services/quiz-service';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -50,52 +50,24 @@ export function ContactForm({ profile, quizAnswers, onSubmit, onBack }: ContactF
     }
 
     try {
-      // Enviar dados para a API
-      const endpoint = getSubmitQuizEndpoint();
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          profile,
-          quizAnswers,
-        }),
-      });
+      // Preparar dados para  
+      const submissionData: QuizSubmission = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        profile,
+        quizAnswers,
+      };
 
-      const rawResponse = await response.text();
-      let result: any = null;
+      // Enviar dados usando o serviço
+      const result = await QuizService.submitQuiz(submissionData);
 
-      if (rawResponse) {
-        try {
-          result = JSON.parse(rawResponse);
-        } catch (parseError) {
-          console.error('Resposta inválida da API:', rawResponse, parseError);
-          throw new Error('Resposta inválida do servidor. Tente novamente em instantes.');
-        }
+      if (result.success) {
+        setIsSubmitting(false);
+        // onSubmit();
+      } else {
+        throw new Error(result.message);
       }
-
-      if (!response.ok) {
-        console.error(
-          'Resposta da API (status):',
-          response.status,
-          rawResponse
-        );
-        if (response.status === 404) {
-          throw new Error(
-            'Endpoint de envio não encontrado. Verifique se a API está ativa e configure a variável de ambiente VITE_API_BASE_URL ou NEXT_PUBLIC_API_BASE_URL.'
-          );
-        }
-        const messageFromApi =
-          result && typeof result === 'object' && 'error' in result
-            ? result.error
-            : null;
-        throw new Error(messageFromApi || `Erro ao enviar dados (status ${response.status})`);
-      }
-
-      setIsSubmitting(false);
-      onSubmit();
     } catch (error) {
       console.error('Erro ao enviar formulário:', error);
       const message =
